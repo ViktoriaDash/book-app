@@ -1,0 +1,9 @@
+h1, h2, h3 {
+  font-family: var(--main-font);
+  color: #070e1f;
+}
+
+p {
+  color: #3b485b;
+  line-height: 1.6;
+}
