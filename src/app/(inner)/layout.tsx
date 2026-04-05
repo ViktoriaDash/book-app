@@ -72,7 +72,7 @@ export default function InnerLayout({ children }: { children: React.ReactNode })
             </li>
             <li>
               <Link href="/read" className="text-slate-500 hover:text-[#350846] flex items-center gap-1">
-                Прочитано <span className="hidden xs:inline"></span>
+                Прочитано  <span className="hidden xs:inline"></span>
               </Link>
             </li>
           </ul>
