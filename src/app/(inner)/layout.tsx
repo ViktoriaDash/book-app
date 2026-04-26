@@ -1,9 +1,9 @@
 'use client';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react'; // Додали signOut
 import styles from './Navigation.module.css';
 
-// Іконки MUI
 import SearchIcon from '@mui/icons-material/Search';
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
@@ -12,6 +12,8 @@ import { Button } from '@mui/material';
 
 export default function InnerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session, status } = useSession(); // Отримуємо статус сесії
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -45,10 +47,39 @@ export default function InnerLayout({ children }: { children: React.ReactNode })
              <div className="cursor-pointer hover:text-[#350846]">
                 <ShoppingCartOutlinedIcon />
              </div>
-             <div className="flex items-center gap-1 cursor-pointer hover:text-[#350846]">
-                <PersonOutlineIcon />
-                <span className="hidden laptop:inline">Увійти</span>
-             </div>
+
+             {/* Логіка: Стан завантаження -> Профіль -> Кнопка Sign In */}
+             {status === "loading" ? (
+               // Показуємо порожній простір або скелетон, поки завантажується статус
+               <div className="w-20 h-8 bg-slate-50 animate-pulse rounded-lg"></div>
+             ) : session ? (
+               <div className="flex items-center gap-3">
+                 <Link 
+                   href="/profile" 
+                   className="flex items-center gap-1 cursor-pointer hover:text-[#350846] transition-colors"
+                 >
+                    <PersonOutlineIcon />
+                    <span className="hidden laptop:inline font-bold">
+                      {session.user?.name}
+                    </span>
+                 </Link>
+                 {/* Додаємо кнопку виходу для тестування */}
+                 <button 
+                   onClick={() => signOut()} 
+                   className="text-[10px] text-red-400 hover:text-red-600 uppercase font-black tracking-tighter"
+                 >
+                   Вихід
+                 </button>
+               </div>
+             ) : (
+               <Button 
+                 variant="outlined" 
+                 onClick={() => router.push('/api/auth/signin')}
+                 className="border-[#3b3a6e] text-[#3b3a6e] hover:bg-[#3b3a6e] hover:text-white normal-case font-bold px-4 rounded-lg transition-all"
+               >
+                 Sign In
+               </Button>
+             )}
           </div>
         </div>
 
@@ -62,17 +93,16 @@ export default function InnerLayout({ children }: { children: React.ReactNode })
             <li><Link href="/ebooks" className="hover:text-[#350846]">Електронні книги</Link></li>
             <li><Link href="/authors" className="hover:text-[#350846]">Автори</Link></li>
             
-           
             <div className="w-px h-4 bg-slate-200 mx-2 hidden tablet:block"></div>
             
             <li>
               <Link href="/my-shelf" className="text-slate-500 hover:text-[#350846] flex items-center gap-1">
-                Моя полиця <span className="hidden xs:inline"></span>
+                Моя полиця
               </Link>
             </li>
             <li>
               <Link href="/read" className="text-slate-500 hover:text-[#350846] flex items-center gap-1">
-                Прочитано  <span className="hidden xs:inline"></span>
+                Прочитано
               </Link>
             </li>
           </ul>
