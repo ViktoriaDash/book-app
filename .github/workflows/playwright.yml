@@ -1,9 +1,9 @@
 name: CI (Jest & Playwright Tests)
 on:
   push:
-    branches: [ main, master, auth-feature ] 
+    branches: [ main, master, lab4 ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main, master, lab4 ]
 
 jobs:
   test:
@@ -12,7 +12,7 @@ jobs:
     
     env:
       POSTGRES_URL: "postgres://user:pass@localhost:5432/db"
-      NEXTAUTH_SECRET: "secret_for_testing_purposes"
+      NEXTAUTH_SECRET: "secret_for_testing"
       NEXTAUTH_URL: "http://localhost:3000"
 
     steps:
