@@ -1,5 +1,5 @@
 import "./globals.css";
-import { Providers } from "@/components/Providers"; // Імпортуємо наш провайдер сесії
+import { Providers } from "@/components/Providers"; 
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

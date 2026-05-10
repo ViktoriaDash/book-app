@@ -1,36 +1,72 @@
-export async function generateStaticParams() {
-  return Array.from({ length: 10 }, (_, i) => ({
-    id: (i + 1).toString(),
-  }));
+import { neon } from '@neondatabase/serverless';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import BookClientView from './BookClientView'; 
+
+async function getBookData(id: string) {
+  if (isNaN(Number(id))) {
+    return null;
+  }
+
+  const connectionString = process.env.NODE_ENV === 'development' 
+    ? process.env.POSTGRES_URL_DEV 
+    : process.env.POSTGRES_URL;
+
+  if (!connectionString) throw new Error("Connection string is missing");
+
+  const sql = neon(connectionString);
+
+  try {
+    const book = await sql`SELECT * FROM books WHERE id = ${id}`;
+    
+    if (book.length === 0) return null;
+
+    const reviews = await sql`SELECT * FROM reviews WHERE book_id = ${id} ORDER BY created_at DESC`;
+    const avgRating = await sql`SELECT AVG(rating) as average FROM reviews WHERE book_id = ${id}`;
+
+    return {
+      book: book[0],
+      reviews: reviews,
+      rating: parseFloat(avgRating[0]?.average || 0).toFixed(1) 
+    };
+  } catch (error) {
+    console.error("Database error:", error);
+    return null;
+  }
 }
 
-export default async function ArticleDetailsPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default async function ArticleDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params; 
+  
+  if (id === 'favorite' || isNaN(Number(id))) {
+    notFound();
+  }
 
-  const [postRes, commentsRes] = await Promise.all([
-    fetch(`https://jsonplaceholder.typicode.com/posts/${id}`),
-    fetch(`https://jsonplaceholder.typicode.com/posts/${id}/comments`)
-  ]);
+  const data = await getBookData(id);
 
-  const post = await postRes.json();
-  const comments = await commentsRes.json();
+  if (!data || !data.book) {
+    notFound();
+  }
+
+  const isEbook = data.book.is_ebook;
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-3xl font-bold text-blue-900 capitalize mb-4">{post.title}</h1>
-      <p className="text-lg text-gray-700 mb-8">{post.body}</p>
-
-      <hr className="my-6 text-gray-200" />
-      
-      <h2 className="text-xl font-semibold mb-4 text-green-700">💬 Відгуки читачів (Книга #{id}):</h2>
-      <div className="space-y-4">
-        {comments.map((comment: any) => (
-          <div key={comment.id} className="p-3 bg-gray-50 rounded border">
-            <p className="font-bold text-sm text-gray-500">{comment.email}</p>
-            <p className="mt-1">{comment.body}</p>
-          </div>
-        ))}
+    <div className="max-w-5xl mx-auto px-4 py-8 font-sans">
+      <div className="mb-8">
+        <Link 
+          href={isEbook ? "/ebooks" : "/articles"} 
+          className="group inline-flex items-center gap-2 text-slate-400 hover:text-[#350846] transition-all duration-300 font-black text-[10px] tracking-[0.2em] uppercase"
+        >
+          <span className="group-hover:-translate-x-1 transition-transform">←</span> 
+          {isEbook ? "Електронна бібліотека" : "Каталог паперових книг"}
+        </Link>
       </div>
+
+      <BookClientView 
+        book={data.book} 
+        initialReviews={data.reviews} 
+        averageRating={data.rating} 
+      />
     </div>
   );
 }

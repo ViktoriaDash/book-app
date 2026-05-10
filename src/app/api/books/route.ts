@@ -8,11 +8,46 @@ const getSql = () => {
   return neon(connectionString!);
 };
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const sql = getSql();
-    const books = await sql`SELECT * FROM books ORDER BY id DESC`;
-    return NextResponse.json(books);
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search') || '';
+    const category = searchParams.get('category');
+    const lang = searchParams.get('lang'); 
+    const page = parseInt(searchParams.get('page') || '1');
+    
+    const limit = 8;
+    const offset = (page - 1) * limit;
+    const searchPattern = `%${search}%`;
+
+    const books = await sql`
+      SELECT b.*, 
+             COALESCE(AVG(r.rating), 0) as average_rating,
+             COUNT(r.id) as reviews_count
+      FROM books b
+      LEFT JOIN reviews r ON b.id = r.book_id
+      WHERE (b.title ILIKE ${searchPattern} OR b.author ILIKE ${searchPattern})
+      ${search ? sql`` : sql`AND b.is_ebook = FALSE`} 
+      ${category && category !== "" ? sql`AND b.category = ${category}` : sql``}
+      ${lang && lang !== "" ? sql`AND b.language = ${lang}` : sql``}
+      GROUP BY b.id
+      ORDER BY b.id DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+
+    const countRes = await sql`
+      SELECT COUNT(*) FROM books 
+      WHERE (title ILIKE ${searchPattern} OR author ILIKE ${searchPattern})
+      ${search ? sql`` : sql`AND is_ebook = FALSE`}
+      ${category && category !== "" ? sql`AND category = ${category}` : sql``}
+      ${lang && lang !== "" ? sql`AND language = ${lang}` : sql``}
+    `;
+
+    const totalBooks = parseInt(countRes[0].count);
+    const totalPages = Math.ceil(totalBooks / limit);
+
+    return NextResponse.json({ books, totalPages, currentPage: page });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -20,17 +55,16 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { title, author, price, description } = body;
     const sql = getSql();
-    
-    const result = await sql`
-      INSERT INTO books (title, author, price, description)
-      VALUES (${title}, ${author}, ${price}, ${description})
-      RETURNING *
+    const body = await request.json();
+    const { title, author, category, language, image_url, description, is_ebook } = body;
+
+    await sql`
+      INSERT INTO books (title, author, category, language, image_url, description, is_ebook)
+      VALUES (${title}, ${author}, ${category}, ${language}, ${image_url}, ${description}, ${is_ebook})
     `;
-    
-    return NextResponse.json(result[0], { status: 201 });
+
+    return NextResponse.json({ message: "Книгу додано!" }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

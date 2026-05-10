@@ -1,4 +1,4 @@
-name: CI (Jest & Playwright Tests)
+name: CI (Lint, Jest & Playwright Tests)
 on:
   push:
     branches: [ main, master, lab4 ]
@@ -26,8 +26,11 @@ jobs:
     - name: Install dependencies
       run: npm install
 
+    - name: Run ESLint
+      run: npm run lint
+
     - name: Run Jest (Unit Tests)
-      run: npm test -- --coverage
+      run: npm run test -- --coverage
       continue-on-error: true
 
     - name: Install Playwright Browsers

@@ -2,51 +2,60 @@ import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
 
 const getSql = () => {
-  const connectionString = process.env.NODE_ENV === 'development' 
-    ? process.env.POSTGRES_URL_DEV 
-    : process.env.POSTGRES_URL;
+  const connectionString = process.env.POSTGRES_URL_DEV || process.env.POSTGRES_URL;
   return neon(connectionString!);
 };
 
-export async function DELETE(
-  request: Request, 
-  { params }: { params: Promise<{ id: string }> } 
-) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params; 
     const sql = getSql();
     
-    await sql`DELETE FROM books WHERE id = ${id}`;
+    const book = await sql`SELECT * FROM books WHERE id = ${id}`;
     
-    return NextResponse.json({ message: `Книгу з id ${id} видалено` });
+    if (!book[0]) {
+      return NextResponse.json({ error: "Книгу не знайдено" }, { status: 404 });
+    }
+    
+    return NextResponse.json(book[0]);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-
-export async function PATCH(
-  request: Request, 
-  { params }: { params: Promise<{ id: string }> } 
-) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await params; 
-    const { price, description } = await request.json();
+    const { id } = await params;
+    const body = await req.json();
+    const sql = getSql();
+
+    await sql`
+      UPDATE books 
+      SET 
+        title = ${body.title}, 
+        author = ${body.author}, 
+        category = ${body.category}, 
+        language = ${body.language}, 
+        description = ${body.description},
+        is_ebook = ${body.is_ebook},
+        image_url = ${body.image_url}
+      WHERE id = ${id}
+    `;
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
     const sql = getSql();
     
-    const result = await sql`
-      UPDATE books 
-      SET price = COALESCE(${price}, price), 
-          description = COALESCE(${description}, description)
-      WHERE id = ${id}
-      RETURNING *
-    `;
-    
-    if (result.length === 0) {
-      return NextResponse.json({ error: "Книгу не знайдено" }, { status: 404 });
-    }
-    
-    return NextResponse.json(result[0]);
+    await sql`DELETE FROM books WHERE id = ${id}`;
+
+    return NextResponse.json({ message: "Книгу видалено 🗑️" });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
