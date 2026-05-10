@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 
+export const dynamic = 'force-dynamic';
+
 const genres = ['Трилер', 'Фантастика', 'Магічний реалізм', 'Есеїстика', 'Роман', 'Психологія', 'Філософія', 'Класика', 'Дитячі', 'Темне фентезі', 'Готичне фентезі', 'Фентезі'];
 
 export default function CreateArticlePage() {
@@ -47,6 +49,8 @@ export default function CreateArticlePage() {
         body: fileData,
       });
 
+      if (!uploadRes.ok) throw new Error('Помилка завантаження файлу');
+      
       const { url: imageUrl } = await uploadRes.json();
 
       const res = await fetch('/api/books', {
@@ -60,9 +64,10 @@ export default function CreateArticlePage() {
         router.push(formData.is_ebook ? '/ebooks' : '/articles');
       }
     } catch (err) {
-      alert('Помилка при завантаженні');
+      alert('Помилка при завантаженні: ' + (err as Error).message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -79,7 +84,7 @@ export default function CreateArticlePage() {
                 <button 
                   type="button" 
                   onClick={() => {setFile(null); setPreview(null);}}
-                  className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full text-[10px] font-bold"
+                  className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full text-[10px] font-bold h-6 w-6"
                 >✕</button>
               </div>
             ) : (
@@ -160,7 +165,7 @@ export default function CreateArticlePage() {
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full bg-[#3b3a6e] text-white py-5 rounded-[20px] font-black uppercase text-[10px] tracking-widest hover:bg-[#350846] transition-all shadow-xl active:scale-95"
+            className="w-full bg-[#3b3a6e] text-white py-5 rounded-[20px] font-black uppercase text-[10px] tracking-widest hover:bg-[#350846] transition-all shadow-xl active:scale-95 disabled:opacity-50"
           >
             {loading ? 'Завантаження...' : 'Додати книгу в каталог'}
           </button>
