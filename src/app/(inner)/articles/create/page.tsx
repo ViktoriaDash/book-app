@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 const genres = ['Трилер', 'Фантастика', 'Магічний реалізм', 'Есеїстика', 'Роман', 'Психологія', 'Філософія', 'Класика', 'Дитячі', 'Темне фентезі', 'Готичне фентезі', 'Фентезі'];
 
-export default function CreateArticlePage() {
+function CreateBookForm() {
   const router = useRouter();
   const { data: session } = useSession();
   
@@ -76,7 +76,6 @@ export default function CreateArticlePage() {
         <h1 className="text-3xl font-black text-[#350846] mb-10 uppercase tracking-tighter">Нова книга</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          
           <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-[32px] p-8 bg-slate-50 transition-all hover:bg-slate-100/50">
             {preview ? (
               <div className="relative w-40 h-56 mb-4 shadow-2xl rounded-xl overflow-hidden">
@@ -108,69 +107,40 @@ export default function CreateArticlePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <input 
-              required
-              placeholder="Назва книги"
-              value={formData.title}
-              onChange={(e) => setFormData({...formData, title: e.target.value})}
-              className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold"
-            />
-            <input 
-              required
-              placeholder="Автор"
-              value={formData.author}
-              onChange={(e) => setFormData({...formData, author: e.target.value})}
-              className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold"
-            />
+            <input required placeholder="Назва книги" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold" />
+            <input required placeholder="Автор" value={formData.author} onChange={(e) => setFormData({...formData, author: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <select 
-              value={formData.category}
-              onChange={(e) => setFormData({...formData, category: e.target.value})}
-              className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none cursor-pointer"
-            >
+            <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none cursor-pointer">
               {genres.map(g => <option key={g} value={g}>{g}</option>)}
             </select>
-
-            <select 
-              value={formData.language}
-              onChange={(e) => setFormData({...formData, language: e.target.value})}
-              className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none cursor-pointer"
-            >
+            <select value={formData.language} onChange={(e) => setFormData({...formData, language: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none cursor-pointer">
               <option value="Українська">Українська</option>
               <option value="Англійська">Англійська</option>
             </select>
           </div>
 
-          <textarea 
-            required
-            placeholder="Опис книги..."
-            rows={4}
-            value={formData.description}
-            onChange={(e) => setFormData({...formData, description: e.target.value})}
-            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none italic"
-          />
+          <textarea required placeholder="Опис книги..." rows={4} value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none italic" />
 
           <label className="flex items-center gap-3 cursor-pointer">
-            <input 
-              type="checkbox" 
-              checked={formData.is_ebook}
-              onChange={(e) => setFormData({...formData, is_ebook: e.target.checked})}
-              className="w-5 h-5 accent-[#3b3a6e]"
-            />
+            <input type="checkbox" checked={formData.is_ebook} onChange={(e) => setFormData({...formData, is_ebook: e.target.checked})} className="w-5 h-5 accent-[#3b3a6e]" />
             <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Це електронна книга</span>
           </label>
 
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-[#3b3a6e] text-white py-5 rounded-[20px] font-black uppercase text-[10px] tracking-widest hover:bg-[#350846] transition-all shadow-xl active:scale-95 disabled:opacity-50"
-          >
+          <button type="submit" disabled={loading} className="w-full bg-[#3b3a6e] text-white py-5 rounded-[20px] font-black uppercase text-[10px] tracking-widest hover:bg-[#350846] transition-all shadow-xl active:scale-95 disabled:opacity-50">
             {loading ? 'Завантаження...' : 'Додати книгу в каталог'}
           </button>
         </form>
       </div>
     </div>
+  );
+}
+
+export default function CreateArticlePage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-screen font-bold uppercase tracking-widest text-slate-400">Підготовка форми...</div>}>
+      <CreateBookForm />
+    </Suspense>
   );
 }
