@@ -1,9 +1,9 @@
 name: CI (Lint, Jest & Playwright Tests)
 on:
   push:
-    branches: [ main, master, lab4 ]
+    branches: [ "main", "final-book-app" ]
   pull_request:
-    branches: [ main, master, lab4 ]
+    branches: [ "main", "final-book-app" ]
 
 jobs:
   test:
