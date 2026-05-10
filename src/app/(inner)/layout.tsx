@@ -107,14 +107,14 @@ export default function InnerLayout({ children }: { children: React.ReactNode })
                     ❤️ Улюблені
                   </Link>
                 </li>
-                {isAdmin && (
+                {/*{isAdmin && (
                   <li className="pt-4 border-t border-slate-100">
                     <Link href="/articles/create" className={`flex items-center gap-2 text-sm transition-all ${pathname === '/articles/create' ? 'text-[#350846] font-black' : 'text-slate-600 font-bold'}`}>
                       <span className="bg-green-100 text-green-600 w-6 h-6 rounded-full flex items-center justify-center font-black text-lg pb-0.5">+</span>
                       Додати книгу
                     </Link>
                   </li>
-                )}
+                )}*/}
               </ul>
             </div>
           )}
