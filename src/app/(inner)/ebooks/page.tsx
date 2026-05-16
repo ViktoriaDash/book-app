@@ -31,7 +31,7 @@ export default function EbooksPage() {
   const isFav = (id: number) => favorites?.some((f: any) => f.id === id);
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Видалити цю електронну книгу з бази? 🗑️")) return;
+    if (!confirm("Видалити цю електронну книгу з бази? ")) return;
     try {
       const res = await fetch(`/api/books/${id}`, { method: 'DELETE' });
       if (res.ok) {
@@ -71,7 +71,7 @@ export default function EbooksPage() {
       }
       const result = await response.json();
       if (response.ok) {
-        alert(result.isRead ? "Ти вже прочитала цю книгу! ✨" : "Книгу додано на полицю! 📖");
+        alert(result.isRead ? "Ти вже прочитала цю книгу! ✨" : "Книгу додано на полицю! ");
       } else {
         alert(result.message || "Ця книга вже на полиці");
       }
