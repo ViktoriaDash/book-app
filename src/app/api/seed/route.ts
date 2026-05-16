@@ -8,7 +8,6 @@ export async function GET() {
       : process.env.POSTGRES_URL;
     const sql = neon(connectionString!);
 
-    // Створення таблиць (якщо не існують)
     await sql`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -59,10 +58,8 @@ export async function GET() {
       );
     `;
 
-    // Очищення таблиці перед заповненням
     await sql`TRUNCATE TABLE books RESTART IDENTITY CASCADE;`;
 
-    // Заповнення даними (БЕЗ PRICE)
     await sql`
       INSERT INTO books (title, author, description, image_url, category, year_published, pages_count, cover_type, language, is_ebook)
       VALUES 
