@@ -5,11 +5,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import FavoriteIcon from '@mui/icons-material/Favorite';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
-import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 
 export default function BookClientView({ book, initialReviews, averageRating }: any) {
   const { data: session } = useSession();
@@ -21,6 +19,9 @@ export default function BookClientView({ book, initialReviews, averageRating }: 
   const [userRating, setUserRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [commentText, setCommentText] = useState('');
+
+
+  const isAdmin = (session?.user as any)?.role === 'admin';
 
   useEffect(() => {
     if (session) {
@@ -64,9 +65,26 @@ export default function BookClientView({ book, initialReviews, averageRating }: 
     const newReview = { user_name: session?.user?.name, rating: userRating, comment: commentText, book_id: book.id };
     const res = await fetch('/api/reviews', { method: 'POST', body: JSON.stringify(newReview) });
     if (res.ok) {
-      setReviews([{ ...newReview, created_at: new Date().toISOString() }, ...reviews]);
+      const savedReview = await res.json();
+      setReviews([{ ...savedReview }, ...reviews]);
       setCommentText('');
       setUserRating(0);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: number) => {
+    if (!reviewId) return alert("Помилка: Немає ID коментаря");
+    if (!confirm("Ти впевнена, що хочеш видалити цей коментар?")) return;
+
+    try {
+      const res = await fetch(`/api/reviews?id=${reviewId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setReviews(reviews.filter((r: any) => r.id !== reviewId));
+      } else {
+        alert("Не вдалося видалити коментар");
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -114,9 +132,9 @@ export default function BookClientView({ book, initialReviews, averageRating }: 
                className={`
                  px-12 py-5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all shadow-xl flex items-center gap-3
                  ${status === 'read'
-                   ? 'bg-green-100 text-green-600 border border-green-200 cursor-default' // Стиль: Прочитано
+                   ? 'bg-green-100 text-green-600 border border-green-200 cursor-default' 
                    : status === 'shelf'
-                     ? 'bg-[#F3E8FF] text-[#A855F7] border border-[#E9D5FF] cursor-default' // Стиль: На полиці
+                     ? 'bg-[#F3E8FF] text-[#A855F7] border border-[#E9D5FF] cursor-default' 
                      : book.is_ebook 
                        ? 'bg-green-600 hover:bg-green-700 text-white active:scale-95' 
                        : 'bg-[#3b3a6e] hover:bg-[#350846] text-white active:scale-95'
@@ -156,10 +174,28 @@ export default function BookClientView({ book, initialReviews, averageRating }: 
         
         <div className="space-y-8">
           {reviews.map((r: any, i: number) => (
-            <div key={i} className="border-b border-slate-100 pb-8 last:border-0">
-              <div className="flex justify-between font-black text-[10px] uppercase mb-3 tracking-widest">
-                <span className="text-slate-900">{r.user_name}</span>
-                <span className="text-slate-300">{new Date(r.created_at).toLocaleDateString('uk-UA')}</span>
+            <div key={r.id || i} className="border-b border-slate-100 pb-8 last:border-0 group">
+              <div className="flex justify-between items-center font-black text-[10px] uppercase mb-3 tracking-widest">
+                <div className="flex items-center gap-3">
+                  <span className="text-slate-900">{r.user_name}</span>
+                  <div className="flex items-center text-yellow-500 font-bold">
+                    {r.rating}
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <span className="text-slate-300">{new Date(r.created_at).toLocaleDateString('uk-UA')}</span>
+                  
+                  {isAdmin && (
+                    <button 
+                      onClick={() => handleDeleteReview(r.id)} 
+                      className="bg-red-50 hover:bg-red-100 text-red-600 text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-all active:scale-95 cursor-pointer border border-red-100"
+                      title="Видалити коментар"
+                    >
+                      Видалити
+                    </button>
+                  )}
+                </div>
               </div>
               <p className="text-slate-700 bg-slate-50/50 p-5 rounded-2xl italic text-sm leading-relaxed border-l-2 border-[#350846]">
                 {r.comment}
