@@ -1,5 +1,7 @@
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 const getSql = () => {
   const connectionString = process.env.NODE_ENV === 'development' 
@@ -47,6 +49,34 @@ export async function GET(request: Request) {
     
     return NextResponse.json(reviews);
   } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if ((session?.user as any)?.role !== 'admin') {
+      return NextResponse.json({ error: "Доступ заборонено " }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const reviewId = searchParams.get('id');
+
+    if (!reviewId) {
+      return NextResponse.json({ error: "Не вказано ID відгуку" }, { status: 400 });
+    }
+
+    const sql = getSql();
+
+    await sql`
+      DELETE FROM reviews 
+      WHERE id = ${reviewId}
+    `;
+    
+    return NextResponse.json({ message: "Відгук успішно видалено з бази 🗑️" });
+  } catch (error: any) {
+    console.error("Помилка при видаленні відгуку:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

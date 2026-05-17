@@ -31,7 +31,6 @@ global.fetch = jest.fn(() =>
   Promise.resolve({ json: () => Promise.resolve([{ id: 1, title: 'Test Book', status: 'read', rating: 5 }]) })
 ) as jest.Mock;
 
-// ОСЬ ТУТ МИ ДОДАЛИ signIn та signOut, щоб тест не падав!
 jest.mock('next-auth/react', () => ({
   useSession: jest.fn(),
   signIn: jest.fn(),

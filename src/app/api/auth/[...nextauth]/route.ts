@@ -1,4 +1,4 @@
-import NextAuth from "next-auth";
+import NextAuth, { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google"; 
 import GitHubProvider from "next-auth/providers/github";
@@ -10,7 +10,8 @@ const getSql = () => {
   return neon(connectionString!);
 };
 
-const handler = NextAuth({
+
+export const authOptions: AuthOptions = {
   providers: [
     GitHubProvider({
       clientId: process.env.GITHUB_ID!,
@@ -26,7 +27,7 @@ const handler = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Пароль", type: "password" }
       },
-     async authorize(credentials) {
+      async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
         const sql = getSql();
         try {
@@ -80,6 +81,8 @@ const handler = NextAuth({
   pages: { signIn: '/login' },
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET, 
-});
+};
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };
