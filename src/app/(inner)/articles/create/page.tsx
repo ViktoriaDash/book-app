@@ -21,7 +21,8 @@ export default function CreateArticlePage() {
     category: 'Фентезі',
     language: 'Українська',
     description: '',
-    is_ebook: false
+    is_ebook: false,
+    image_url: '' 
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -29,46 +30,66 @@ export default function CreateArticlePage() {
     if (selectedFile) {
       setFile(selectedFile);
       setPreview(URL.createObjectURL(selectedFile)); 
+      setFormData({ ...formData, image_url: '' }); 
+    }
+  };
+
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value;
+    setFormData({ ...formData, image_url: url });
+    if (!file) {
+      setPreview(url); 
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return alert("Оберіть обкладинку!");
-    
     setLoading(true);
 
+    let finalImageUrl = formData.image_url;
+
     try {
-      const fileData = new FormData();
-      fileData.append('file', file);
+      if (file) {
+        const fileData = new FormData();
+        fileData.append('file', file);
 
-      const uploadRes = await fetch('/api/upload', {
-        method: 'POST',
-        body: fileData,
-      });
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: fileData,
+        });
 
-      const { url: imageUrl } = await uploadRes.json();
+        if (uploadRes.ok) {
+          const { url } = await uploadRes.json();
+          finalImageUrl = url;
+        }
+      }
+
+      if (!finalImageUrl) {
+        setLoading(false);
+        return alert("Оберіть файл обкладинки АБО вставте посилання на картинку!");
+      }
 
       const res = await fetch('/api/books', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, image_url: imageUrl }),
+        body: JSON.stringify({ ...formData, image_url: finalImageUrl }),
       });
 
       if (res.ok) {
         alert('Книгу успішно додано! ✨');
         router.push(formData.is_ebook ? '/ebooks' : '/articles');
+      } else {
+        throw new Error("Помилка збереження в БД");
       }
     } catch (err) {
       alert('Помилка при завантаженні');
+      console.error(err);
     }
     setLoading(false);
   };
 
   return (
     <div>
-      
-      
       <div className="max-w-3xl mx-auto py-10 px-4">
         <div className="bg-white rounded-[40px] shadow-sm border border-slate-100 p-8 md:p-12">
           <h1 className="text-3xl font-black text-[#350846] mb-10 uppercase tracking-tighter">Нова книга</h1>
@@ -77,30 +98,49 @@ export default function CreateArticlePage() {
             
             <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-[32px] p-8 bg-slate-50 transition-all hover:bg-slate-100/50">
               {preview ? (
-                <div className="relative w-40 h-56 mb-4 shadow-2xl rounded-xl overflow-hidden">
-                  <Image src={preview} alt="Preview" fill className="object-cover" />
+                <div className="relative w-40 h-56 mb-4 shadow-2xl rounded-xl overflow-hidden bg-slate-200">
+                  <Image src={preview} alt="Preview" fill className="object-cover" unoptimized />
                   <button 
                     type="button" 
-                    onClick={() => {setFile(null); setPreview(null);}}
-                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full text-[10px] font-bold"
+                    onClick={() => {
+                      setFile(null); 
+                      setPreview(null);
+                      setFormData({ ...formData, image_url: '' });
+                    }}
+                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full text-[10px] font-bold z-10"
                   >✕</button>
                 </div>
               ) : (
-                <div className="text-center">
+                <div className="text-center w-full max-w-md">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Обкладинка книги</p>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={handleFileChange} 
-                    className="hidden" 
-                    id="file-upload" 
-                  />
-                  <label 
-                    htmlFor="file-upload" 
-                    className="cursor-pointer bg-[#3b3a6e] text-white px-8 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-[#350846] transition-all inline-block"
-                  >
-                    Обрати файл
-                  </label>
+                  
+                  <div className="flex flex-col gap-4">
+                    <div>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleFileChange} 
+                        className="hidden" 
+                        id="file-upload" 
+                      />
+                      <label 
+                        htmlFor="file-upload" 
+                        className="cursor-pointer bg-[#3b3a6e] text-white px-8 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-[#350846] transition-all inline-block"
+                      >
+                        Обрати файл з ПК
+                      </label>
+                    </div>
+
+                    <div className="text-[10px] font-black text-slate-300 uppercase">Або</div>
+
+                    <input 
+                      type="url"
+                      placeholder="Вставте посилання на картинку з інтернету..."
+                      value={formData.image_url}
+                      onChange={handleUrlChange}
+                      className="w-full p-3 bg-white border border-slate-200 rounded-xl outline-none text-xs font-medium text-center"
+                    />
+                  </div>
                 </div>
               )}
             </div>
